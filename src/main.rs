@@ -91,15 +91,53 @@ struct Color {
     b: f32,
 }
 
-// TODO Add, Mul
+impl Add for Color {
+    type Output = Color;
 
+    fn add(self, other: Color) -> Color {
+	Color {
+	    r: self.r + other.r,
+	    g: self.g + other.g,
+	    b: self.b + other.b,
+	}
+    }
+}
 
+impl Mul<f32> for Color {
+    type Output = Color;
+
+    fn mul(self, scalar: f32) -> Color {
+	Color {
+	    r: self.r * scalar,
+	    g: self.g * scalar,
+	    b: self.b * scalar,
+	}
+    }	
+}
+
+impl Color {
+    fn quantise(self) -> image::Rgb<u8> {
+	let r: u8 = (self.r * 255f32).min(255f32).max(0f32) as u8;
+	let g: u8 = (self.g * 255f32).min(255f32).max(0f32) as u8;
+	let b: u8 = (self.b * 255f32).min(255f32).max(0f32) as u8;
+	image::Rgb([r, g, b])
+    }
+}
+
+const BLACK: Color = Color {
+    r: 0f32,
+    g: 0f32,
+    b: 0f32,
+};
 
 #[derive(Copy, Clone, Debug)]
 struct Triangle {
     base: Vector,
     v1: Vector,
     v2: Vector,
+    c0: Color,
+    c1: Color,
+    c2: Color
 }
 
 impl Triangle {
@@ -114,7 +152,7 @@ struct Ray {
     direction: Vector
 }
 
-fn intersect(ray: Ray, triangle: Triangle) -> Option<f32> {
+fn intersect(ray: Ray, triangle: Triangle) -> Option<Color> {
     let normal = triangle.normal();
 
     let relative_origin = ray.origin - triangle.base;
@@ -135,7 +173,11 @@ fn intersect(ray: Ray, triangle: Triangle) -> Option<f32> {
     let c2 = (a2 * b11 - a1 * b22) / det;
 
     if c1 > 0f32 && c2 > 0f32 && c1 + c2 < 1f32 {
-	Some(lambda)
+	let c0 = 1f32 - c1 - c2;
+
+	let color = triangle.c0 * c0 + triangle.c1 * c1 + triangle.c2 * c2;
+	
+	Some(color)
     } else {
 	None
     }
@@ -158,8 +200,60 @@ impl Camera {
     }
 }
 
+struct Rendering {
+    width: usize,
+    height: usize,
+    pixels: Vec<Color>,
+}
+
+impl Rendering {
+    fn rendering(width: usize, height: usize) -> Rendering {
+	let mut rendering = Rendering {
+	    width: width,
+	    height: height,
+	    pixels: Vec::new(),
+	};
+
+	rendering.pixels.resize(width * height, BLACK);
+
+	rendering
+    }
+
+    fn get_mut_pixel(&mut self, px: usize, py: usize) -> &mut Color {
+	assert!(self.pixels.len() == self.width * self.height);
+
+	assert!(px < self.width);
+	assert!(py < self.height);
+	
+	let n = px + py * self.width;
+
+	self.pixels.get_mut(n).unwrap()
+    }
+    
+    fn save(self) {
+	assert!(self.pixels.len() == self.width * self.height);
+
+	let mut quantised_pixels: Vec<u8> = Vec::new();
+	quantised_pixels.resize(self.width * self.height * 3, 0u8);
+
+	for py in 0 .. self.height {
+	    for px in 0 .. self.width {
+		let quantised_color = self.pixels[px + py * self.width].quantise();
+		quantised_pixels[(px + py * self.width) * 3]     = quantised_color[0];
+		quantised_pixels[(px + py * self.width) * 3 + 1] = quantised_color[1];
+		quantised_pixels[(px + py * self.width) * 3 + 2] = quantised_color[2];
+		
+	    }
+	}
+	
+	let img = ImageBuffer::<image::Rgb<u8>, Vec<u8>>::from_vec(self.width as u32, self.height as u32, quantised_pixels).unwrap();
+
+	img.save("test.png").unwrap();
+    }
+}
+
 fn main() {
-    println!("Hello, world!");
+    println!("rendering...");
 
     let camera = Camera {
 	position: Vector{x: 0f32, y: 0f32, z: 0f32},
@@ -170,33 +264,36 @@ fn main() {
 
     let t = Triangle {
 	base: Vector{x: 0f32, y: 1f32, z: 0f32},
-	v1:   Vector{x: 1f32, y: 0f32, z: 0f32},
-	v2:   Vector{x: 0f32, y: 0f32, z: 1f32},
+	v1:   Vector{x: 0.5f32, y: 0f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: 0f32, z: 0.5f32},
+	c0: Color{r: 1f32, g: 0f32, b: 0f32},
+	c1: Color{r: 0f32, g: 1f32, b: 0f32},
+	c2: Color{r: 0f32, g: 0f32, b: 1f32},
     };
 
 
+    let width = 160;
+    let height = 90;
     
-    let img: RgbImage = ImageBuffer::new(512, 512);
+    let mut rendering = Rendering::rendering(width, height);
 
-    // Construct a new by repeated calls to the supplied closure.
-    let mut img = ImageBuffer::from_fn(512, 512, |x, y| {
-	let x2 = x as f32 * 2f32 / 512f32 - 1f32;
-	let y2 = y as f32 * 2f32 / 512f32 - 1f32;
-	let ray = camera.shoot_ray(x2, y2);
+    for py in 0 .. height {
+	for px in 0 .. width {
+	    let pixel = rendering.get_mut_pixel(px, py);
 
-	match intersect(ray, t) {
-	    Some(depth) => image::Rgb([0u8, 200u8, 0u8]),
-	    None => image::Rgb([0u8, 0u8, 0u8]),
+	    let x = 2f32 * ((px as f32) - (width  as f32 * 0.5f32)) / (height as f32);	    // using height to keep aspect ratio
+	    let y = 2f32 * ((py as f32) - (height as f32 * 0.5f32)) / (height as f32);
+
+	    let ray = camera.shoot_ray(x, y);
+
+	    match intersect(ray, t) {
+		Some(color) => {
+		    *pixel = color;
+		},
+		None => {},
+	    }
 	}
-	/*
-	if x + y + y < 300 {
-            //image::Luma([0u8])
-	    image::Rgb([0u8, 0u8, 255u8])
-	} else {
-            //image::Luma([255u8])
-	    image::Rgb([0u8, 255u8, 0u8])
-	}*/
-    });
+    }
 
-    img.save("test.png").unwrap();
+    rendering.save();
 }
