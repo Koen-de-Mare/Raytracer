@@ -52,7 +52,17 @@ impl Triangle {
 	let hit_position_1 = ray.origin + ray.direction * depth;
 	let hit_position_2 = self.base + self.v1 * c1 + self.v2 * c2;
 
-	assert!((hit_position_1 - hit_position_2).norm2() < 0.01f32);
+	//assert!((hit_position_1 - hit_position_2).norm2() < 0.0001f32);
+
+	if (hit_position_1 - hit_position_2).norm2() > 0.0001f32 {
+	    println!("INCONSISTENT TRIANGLE INTERSECTION");
+	    println!("badness: {}", (hit_position_1 - hit_position_2).norm2());
+	    println!("{:#?}", self);
+	    println!("{:#?}", ray);
+	    println!("{}", depth);
+	    println!("{:#?}", hit_position_1);
+	    println!("{:#?}", hit_position_2);
+	}
 	
 	Some((
 	    depth,
