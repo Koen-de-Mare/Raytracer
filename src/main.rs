@@ -152,13 +152,19 @@ struct Ray {
     direction: Vector
 }
 
-fn intersect(ray: Ray, triangle: Triangle) -> Option<Color> {
+fn intersect(ray: Ray, triangle: Triangle) -> Option<(f32, Color)> {
+    assert!(0.999f32 < dot(ray.direction, ray.direction));
+    assert!(1.001f32 > dot(ray.direction, ray.direction));
+    
     let normal = triangle.normal();
 
     let relative_origin = ray.origin - triangle.base;
-    
-    let lambda = dot(relative_origin, ray.direction) / dot(ray.direction, ray.direction);
-    let relative_intersection_point = relative_origin + ray.direction * lambda;
+
+    let lambda = dot(relative_origin, normal);
+    if lambda < 0f32 { return None; } //face culling
+    let depth = -lambda / dot (ray.direction, normal);
+    if depth < 0f32 { return None; }
+    let relative_intersection_point = relative_origin + ray.direction * depth;
 
     let a1 = dot(relative_intersection_point, triangle.v1);
     let a2 = dot(relative_intersection_point, triangle.v2);
@@ -172,12 +178,12 @@ fn intersect(ray: Ray, triangle: Triangle) -> Option<Color> {
     let c1 = (a1 * b22 - a2 * b12) / det;
     let c2 = (a2 * b11 - a1 * b22) / det;
 
-    if c1 > 0f32 && c2 > 0f32 && c1 + c2 < 1f32 {
+    if c1 > -0.0000001f32 && c2 > -0.0000001f32 && c1 + c2 < 1.0000001f32 {
 	let c0 = 1f32 - c1 - c2;
 
 	let color = triangle.c0 * c0 + triangle.c1 * c1 + triangle.c2 * c2;
 	
-	Some(color)
+	Some((depth, color))
     } else {
 	None
     }
@@ -252,11 +258,36 @@ impl Rendering {
     }
 }
 
+struct Scene {
+    triangles: Vec<Triangle>
+}
+
+impl Scene {
+    fn trace_ray(&self, ray: Ray) -> Option<Color> {
+	let mut best_hit = None;
+	let mut best_depth = 99999999f32;
+
+	for triangle in &self.triangles {
+	    match intersect(ray, *triangle) {
+		None => {},
+		Some((depth, color)) => {
+		    if depth < best_depth {
+			best_depth = depth;
+			best_hit = Some(color);
+		    }
+		},
+	    }
+	}
+
+	best_hit
+    }
+}
+
 fn main() {
     println!("rendering...");
 
     let camera = Camera {
-	position: Vector{x: 0f32, y: 0f32, z: 0f32},
+	position: Vector{x: 0.001f32, y: -0.801f32, z: 1.0001f32},
 	forward:  Vector{x: 0f32, y: 1f32, z: 0f32},
 	right:    Vector{x: 1f32, y: 0f32, z: 0f32},
 	up:       Vector{x: 0f32, y: 0f32, z: 1f32},
@@ -264,16 +295,129 @@ fn main() {
 
     let t = Triangle {
 	base: Vector{x: 0f32, y: 1f32, z: 0f32},
-	v1:   Vector{x: 0.5f32, y: 0f32, z: 0f32},
-	v2:   Vector{x: 0f32, y: 0f32, z: 0.5f32},
+	v1:   Vector{x: 1f32, y: 0f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: 0f32, z: 1f32},
 	c0: Color{r: 1f32, g: 0f32, b: 0f32},
 	c1: Color{r: 0f32, g: 1f32, b: 0f32},
 	c2: Color{r: 0f32, g: 0f32, b: 1f32},
     };
 
 
-    let width = 160;
-    let height = 90;
+    let mut scene = Scene {
+	triangles: Vec::new(),
+    };
+
+    //floor
+    scene.triangles.push(Triangle {
+	base: Vector{x: 1f32, y: 1f32, z: 0f32},
+	v1:   Vector{x: -2f32, y: 0f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: -2f32, z: 0f32},
+	c0: Color{r: 0.6f32, g: 0.6f32, b: 0.60f32},
+	c1: Color{r: 0.6f32, g: 0.6f32, b: 0.60f32},
+	c2: Color{r: 0.6f32, g: 0.6f32, b: 0.60f32},
+    });
+    scene.triangles.push(Triangle {
+	base: Vector{x: -1f32, y: -1f32, z: 0f32},
+	v1:   Vector{x: 2f32, y: 0f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: 2f32, z: 0f32},
+	c0: Color{r: 0.6f32, g: 0.6f32, b: 0.6f32},
+	c1: Color{r: 0.6f32, g: 0.6f32, b: 0.6f32},
+	c2: Color{r: 0.6f32, g: 0.6f32, b: 0.6f32},
+    });
+
+    //ceiling
+    scene.triangles.push(Triangle {
+	base: Vector{x: 1f32, y: 1f32, z: 2f32},
+	v1:   Vector{x: 0f32, y: -2f32, z: 0f32},
+	v2:   Vector{x: -2f32, y: 0f32, z: 0f32},
+	c0: Color{r: 0.9f32, g: 0.9f32, b: 0.9f32},
+	c1: Color{r: 0.9f32, g: 0.9f32, b: 0.9f32},
+	c2: Color{r: 0.9f32, g: 0.9f32, b: 0.9f32},
+    });
+    scene.triangles.push(Triangle {
+	base: Vector{x: -1f32, y: -1f32, z: 2f32},
+	v1:   Vector{x: 0f32, y: 2f32, z: 0f32},
+	v2:   Vector{x: 2f32, y: 0f32, z: 0f32},
+	c0: Color{r: 0.9f32, g: 0.9f32, b: 0.9f32},
+	c1: Color{r: 0.9f32, g: 0.9f32, b: 0.9f32},
+	c2: Color{r: 0.9f32, g: 0.9f32, b: 0.9f32},
+    });
+
+
+    //walls
+    scene.triangles.push(Triangle {
+	base: Vector{x: 1f32, y: 1f32, z: 2f32},
+	v1:   Vector{x: 0f32, y: 0f32, z: -2f32},
+	v2:   Vector{x: 0f32, y: -2f32, z: 0f32},
+	c0: Color{r: 0.8f32, g: 0.2f32, b: 0.2f32},
+	c1: Color{r: 0.8f32, g: 0.2f32, b: 0.2f32},
+	c2: Color{r: 0.8f32, g: 0.2f32, b: 0.2f32},
+    });
+    scene.triangles.push(Triangle {
+	base: Vector{x: 1f32, y: -1f32, z: 0f32},
+	v1:   Vector{x: 0f32, y: 0f32, z: 2f32},
+	v2:   Vector{x: 0f32, y: 2f32, z: 0f32},
+	c0: Color{r: 0.8f32, g: 0.2f32, b: 0.2f32},
+	c1: Color{r: 0.8f32, g: 0.2f32, b: 0.2f32},
+	c2: Color{r: 0.8f32, g: 0.2f32, b: 0.2f32},
+    });
+
+    scene.triangles.push(Triangle {
+	base: Vector{x: -1f32, y: 1f32, z: 2f32},
+	v1:   Vector{x: 0f32, y: -2f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: 0f32, z: -2f32},
+	c0: Color{r: 0.2f32, g: 0.8f32, b: 0.2f32},
+	c1: Color{r: 0.2f32, g: 0.8f32, b: 0.2f32},
+	c2: Color{r: 0.2f32, g: 0.8f32, b: 0.2f32},
+    });
+    scene.triangles.push(Triangle {
+	base: Vector{x: -1f32, y: -1f32, z: 0f32},
+	v1:   Vector{x: 0f32, y: 2f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: 0f32, z: 2f32},
+	c0: Color{r: 0.2f32, g: 0.8f32, b: 0.2f32},
+	c1: Color{r: 0.2f32, g: 0.8f32, b: 0.2f32},
+	c2: Color{r: 0.2f32, g: 0.8f32, b: 0.2f32},
+    });
+
+
+    scene.triangles.push(Triangle {
+	base: Vector{x: 1f32, y: 1f32, z: 0f32},
+	v1:   Vector{x: 0f32, y: 0f32, z: 2f32},
+	v2:   Vector{x: -2f32, y: 0f32, z: 0f32},
+	c0: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c1: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c2: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+    });
+    scene.triangles.push(Triangle {
+	base: Vector{x: -1f32, y: 1f32, z: 2f32},
+	v1:   Vector{x: 0f32, y: 0f32, z: -2f32},
+	v2:   Vector{x: 2f32, y: 0f32, z: 0f32},
+	c0: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c1: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c2: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+    });
+
+    scene.triangles.push(Triangle {
+	base: Vector{x: 1f32, y: -1f32, z: 0f32},
+	v1:   Vector{x: -2f32, y: 0f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: 0f32, z: 2f32},
+	c0: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c1: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c2: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+    });
+    scene.triangles.push(Triangle {
+	base: Vector{x: -1f32, y: -1f32, z: 2f32},
+	v1:   Vector{x: 2f32, y: 0f32, z: 0f32},
+	v2:   Vector{x: 0f32, y: 0f32, z: -2f32},
+	c0: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c1: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+	c2: Color{r: 0.8f32, g: 0.8f32, b: 0.8f32},
+    });
+
+    
+    
+    let width = 160 * 4;
+    let height = 90 * 4;
     
     let mut rendering = Rendering::rendering(width, height);
 
@@ -282,11 +426,11 @@ fn main() {
 	    let pixel = rendering.get_mut_pixel(px, py);
 
 	    let x = 2f32 * ((px as f32) - (width  as f32 * 0.5f32)) / (height as f32);	    // using height to keep aspect ratio
-	    let y = 2f32 * ((py as f32) - (height as f32 * 0.5f32)) / (height as f32);
+	    let y = -2f32 * ((py as f32) - (height as f32 * 0.5f32)) / (height as f32);
 
 	    let ray = camera.shoot_ray(x, y);
 
-	    match intersect(ray, t) {
+	    match scene.trace_ray(ray) {
 		Some(color) => {
 		    *pixel = color;
 		},
