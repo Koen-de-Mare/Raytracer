@@ -18,13 +18,11 @@ mod ray;
 use vector::*;
 use color::*;
 use triangle::*;
-use surface_element::*;
 use sphere::*;
 use camera::*;
 use scene::*;
 use rendering::*;
 use material::*;
-use ray::*;
 
 fn main() {
     println!("rendering...");
@@ -41,10 +39,10 @@ fn main() {
 	sphere: Sphere {
 	    position: Vector {
 		x: 0f32,
-		y: 0.75f32,
-		z: 0.25f32
+		y: 0f32,
+		z: 3f32
 	    },
-	    radius: 0.25f32,
+	    radius: 1.25f32,
 	    color: Color {
 		r: 1f32,
 		g: 1f32,
@@ -60,9 +58,9 @@ fn main() {
 	v2:   Vector{x: 0f32, y: -2f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.6f32,
-		g: 0.6f32,
-		b: 0.6f32,
+		r: 0.9f32,
+		g: 0.9f32,
+		b: 0.9f32,
 	    },
 	},
     });
@@ -72,9 +70,9 @@ fn main() {
 	v2:   Vector{x: 0f32, y: 2f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.6f32,
-		g: 0.6f32,
-		b: 0.6f32,
+		r: 0.9f32,
+		g: 0.9f32,
+		b: 0.9f32,
 	    },
 	},
     });
@@ -106,7 +104,7 @@ fn main() {
     });
 
 
-    //walls
+    //right wall
     scene.triangles.push(Triangle {
 	base: Vector{x: 1f32, y: 1f32, z: 2f32},
 	v1:   Vector{x: 0f32, y: 0f32, z: -2f32},
@@ -114,7 +112,7 @@ fn main() {
 	material: Material {
 	    diffuse_color: Color {
 		r: 0.9f32,
-		g: 0.2f32,
+		g: 0.9f32,
 		b: 0.2f32,
 	    },
 	},
@@ -126,12 +124,13 @@ fn main() {
 	material: Material {
 	    diffuse_color: Color {
 		r: 0.9f32,
-		g: 0.2f32,
+		g: 0.9f32,
 		b: 0.2f32,
 	    },
 	},
     });
 
+    //left wall
     scene.triangles.push(Triangle {
 	base: Vector{x: -1f32, y: 1f32, z: 2f32},
 	v1:   Vector{x: 0f32, y: -2f32, z: 0f32},
@@ -140,7 +139,7 @@ fn main() {
 	    diffuse_color: Color {
 		r: 0.2f32,
 		g: 0.9f32,
-		b: 0.2f32,
+		b: 0.9f32,
 	    },
 	},
     });
@@ -152,21 +151,21 @@ fn main() {
 	    diffuse_color: Color {
 		r: 0.2f32,
 		g: 0.9f32,
-		b: 0.2f32,
+		b: 0.9f32,
 	    },
 	},
     });
 
-
+    //far wall
     scene.triangles.push(Triangle {
 	base: Vector{x: 1f32, y: 1f32, z: 0f32},
 	v1:   Vector{x: 0f32, y: 0f32, z: 2f32},
 	v2:   Vector{x: -2f32, y: 0f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.8f32,
-		g: 0.8f32,
-		b: 0.2f32,
+		r: 0.9f32,
+		g: 0.2f32,
+		b: 0.9f32,
 	    },
 	},
     });
@@ -176,13 +175,14 @@ fn main() {
 	v2:   Vector{x: 2f32, y: 0f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.8f32,
-		g: 0.8f32,
-		b: 0.2f32,
+		r: 0.9f32,
+		g: 0.2f32,
+		b: 0.9f32,
 	    },
 	},
     });
 
+    //wall behind camera
     scene.triangles.push(Triangle {
 	base: Vector{x: 1f32, y: -1f32, z: 0f32},
 	v1:   Vector{x: -2f32, y: 0f32, z: 0f32},
@@ -201,9 +201,9 @@ fn main() {
 	v2:   Vector{x: 0f32, y: 0f32, z: -2f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.8f32,
-		g: 0.8f32,
-		b: 0.8f32,
+		r: 0.9f32,
+		g: 0.9f32,
+		b: 0.9f32,
 	    },
 	},
     });
@@ -224,7 +224,7 @@ fn main() {
 
 	    let ray = camera.shoot_ray(x, y);
 
-	    let num_samples = 10;
+	    let num_samples = 200;
 	    let mut accumulator = BLACK;
 	    for _ in 0 .. num_samples {
 		accumulator = accumulator + scene.trace_ray(ray, 5);
@@ -234,6 +234,8 @@ fn main() {
 	}
     }
 
+    rendering.apply_gamma(0.75f32);
+    
     println!("saving...");
     
     rendering.save();

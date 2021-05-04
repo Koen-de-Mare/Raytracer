@@ -31,6 +31,14 @@ impl Rendering {
 
 	self.pixels.get_mut(n).unwrap()
     }
+
+    pub fn apply_gamma(&mut self, gamma: f32) {
+	for pixel in &mut self.pixels {
+	    pixel.r = pixel.r.powf(gamma);
+	    pixel.g = pixel.g.powf(gamma);
+	    pixel.b = pixel.b.powf(gamma);
+	}
+    }
     
     pub fn save(self) {
 	assert!(self.pixels.len() == self.width * self.height);
