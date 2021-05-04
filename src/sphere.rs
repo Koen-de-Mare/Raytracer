@@ -1,18 +1,18 @@
 use crate::vector::*;
 use crate::material::*;
 use crate::ray::*;
-use crate::surface_element::*;
+use crate::color::*;
 
 
 #[derive(Copy, Clone, Debug)]
 pub struct Sphere {
     pub position: Vector,
     pub radius: f32,
-    pub material: Material,
+    pub color: Color,
 }
 
 impl Sphere {
-    pub fn intersect(self, ray: Ray) -> Option<(f32, SurfaceElement)> {
+    pub fn intersect(self, ray: Ray) -> Option<f32> {
 	assert!(ray.direction.is_normal());
 
 	let relative_origin = ray.origin - self.position;
@@ -33,14 +33,9 @@ impl Sphere {
 	    return None;
 	}
 
-	let intersection_point = ray.origin + ray.direction * distance;
-
-	let surface_element = SurfaceElement {
-	    position: intersection_point,
-	    normal: (intersection_point - self.position).normalised(),
-	    material: self.material,
-	};
+	//let intersection_point = ray.origin + ray.direction * distance;
+	//let normal = (intersection_point - self.position).normalised();
 	
-	Some((distance, surface_element))
+	Some(distance)
     }
 }

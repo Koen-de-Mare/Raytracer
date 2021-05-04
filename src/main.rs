@@ -38,6 +38,19 @@ fn main() {
 
     let mut scene = Scene {
 	triangles: Vec::new(),
+	sphere: Sphere {
+	    position: Vector {
+		x: 0f32,
+		y: 0.75f32,
+		z: 0.25f32
+	    },
+	    radius: 0.25f32,
+	    color: Color {
+		r: 1f32,
+		g: 1f32,
+		b: 1f32,
+	    },
+	},
     };
 
     //floor
@@ -51,7 +64,6 @@ fn main() {
 		g: 0.6f32,
 		b: 0.6f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
     scene.triangles.push(Triangle {
@@ -64,7 +76,6 @@ fn main() {
 		g: 0.6f32,
 		b: 0.6f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
 
@@ -79,11 +90,6 @@ fn main() {
 		g: 0.9f32,
 		b: 0.9f32,
 	    },
-	    emmitance_color: Color {
-		r: 1f32,
-		g: 1f32,
-		b: 1f32,
-	    },
 	},
     });
     scene.triangles.push(Triangle {
@@ -95,11 +101,6 @@ fn main() {
 		r: 0.9f32,
 		g: 0.9f32,
 		b: 0.9f32,
-	    },
-	    emmitance_color: Color {
-		r: 1f32,
-		g: 1f32,
-		b: 1f32,
 	    },
 	},
     });
@@ -116,7 +117,6 @@ fn main() {
 		g: 0.2f32,
 		b: 0.2f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
     scene.triangles.push(Triangle {
@@ -129,7 +129,6 @@ fn main() {
 		g: 0.2f32,
 		b: 0.2f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
 
@@ -143,7 +142,6 @@ fn main() {
 		g: 0.9f32,
 		b: 0.2f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
     scene.triangles.push(Triangle {
@@ -156,7 +154,6 @@ fn main() {
 		g: 0.9f32,
 		b: 0.2f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
 
@@ -171,7 +168,6 @@ fn main() {
 		g: 0.8f32,
 		b: 0.2f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
     scene.triangles.push(Triangle {
@@ -184,7 +180,6 @@ fn main() {
 		g: 0.8f32,
 		b: 0.2f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
 
@@ -198,7 +193,6 @@ fn main() {
 		g: 0.8f32,
 		b: 0.8f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
     scene.triangles.push(Triangle {
@@ -211,14 +205,12 @@ fn main() {
 		g: 0.8f32,
 		b: 0.8f32,
 	    },
-	    emmitance_color: BLACK,
 	},
     });
 
     
-    
-    let width = 160 * 4;
-    let height = 90 * 4;
+    let width = 16 * 20;
+    let height = 9 * 20;
     
     let mut rendering = Rendering::rendering(width, height);
 

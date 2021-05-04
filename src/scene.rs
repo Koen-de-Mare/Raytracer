@@ -3,14 +3,16 @@ use crate::surface_element::*;
 use crate::ray::*;
 use crate::vector::*;
 use crate::color::*;
+use crate::sphere::*;
 
 #[derive(Clone, Debug)]
 pub struct Scene {
-    pub triangles: Vec<Triangle>
+    pub triangles: Vec<Triangle>,
+    pub sphere: Sphere,
 }
 
 impl Scene {
-    fn scan_hit(&self, ray: Ray) -> Option<SurfaceElement> {
+    fn scan_hit(&self, ray: Ray) -> Option<(f32,SurfaceElement)> {
 	let mut best_hit = None;
 	let mut best_depth = 99999999f32;
 
@@ -20,7 +22,7 @@ impl Scene {
 		Some((depth, surface_element)) => {
 		    if depth < best_depth {
 			best_depth = depth;
-			best_hit = Some(surface_element);
+			best_hit = Some((depth,surface_element));
 		    }
 		},
 	    }
@@ -33,7 +35,7 @@ impl Scene {
     // convention for direction to be the direction INTO the surface
     fn light_out(&self, surface_element: SurfaceElement, direction: Vector, recurse: i32) -> Color {
 	if recurse == 0 {
-	    return surface_element.material.emmitance_color;
+	    return BLACK;
 	}
 
 	let p: f32 = rand::random();
@@ -54,17 +56,32 @@ impl Scene {
 
 	let flux_in = self.trace_ray(ray, recurse - 1);
 
-	flux_in * surface_element.material.diffuse_color + surface_element.material.emmitance_color
+	flux_in * surface_element.material.diffuse_color
     }
     
     pub fn trace_ray(&self, ray: Ray, recurse: i32) -> Color {
 	assert!(recurse >= 0);
 	
-	match self.scan_hit(ray) {
-	    None => { BLACK },
-	    Some(surface_element) => {
+	let triangle_hit = self.scan_hit(ray);
+	let sphere_hit = self.sphere.intersect(ray);
+
+	
+	match (triangle_hit, sphere_hit) {
+	    (None, None) => { BLACK },
+	    (Some((_,surface_element)), None) => {
 		assert!(surface_element.normal.is_normal());
 		self.light_out(surface_element, ray.direction, recurse)
+	    },
+	    (None, Some(_)) => {
+		self.sphere.color
+	    },
+	    (Some((triangle_depth, surface_element)), Some(sphere_depth)) => {
+		if triangle_depth < sphere_depth {
+		    assert!(surface_element.normal.is_normal());
+		self.light_out(surface_element, ray.direction, recurse)
+		} else {
+		    self.sphere.color
+		}
 	    },
 	}
     }
