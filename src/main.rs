@@ -28,7 +28,7 @@ fn main() {
     println!("rendering...");
 
     let camera = Camera {
-	position: Vector{x: 0.001f32, y: -0.801f32, z: 1.40001f32},
+	position: Vector{x: 0.001f32, y: -0.801f32, z: 1.0001f32},
 	forward:  Vector{x: 0f32, y: 1f32, z: 0f32},
 	right:    Vector{x: 1f32, y: 0f32, z: 0f32},
 	up:       Vector{x: 0f32, y: 0f32, z: 1f32},
@@ -40,7 +40,7 @@ fn main() {
 	    position: Vector {
 		x: 0f32,
 		y: 0.7f32,
-		z: 1.5f32
+		z: 1.25f32
 	    },
 	    radius: 0.05f32,
 	    color: Color {
@@ -210,7 +210,7 @@ fn main() {
 
     //occluder
     scene.triangles.push(Triangle {
-	base: Vector{x: 0f32, y: 0.4f32, z: 1.2f32},
+	base: Vector{x: 0f32, y: 0.4f32, z: 0.9f32},
 	v1:   Vector{x: 0.5f32, y: 1f32, z: 0f32},
 	v2:   Vector{x: -1f32, y: 1f32, z: 0.4f32},
 	material: Material {
@@ -222,7 +222,7 @@ fn main() {
 	},
     });
     scene.triangles.push(Triangle {
-	base: Vector{x: 0f32, y: 0.4f32, z: 1.2f32},
+	base: Vector{x: 0f32, y: 0.4f32, z: 0.9f32},
 	v1:   Vector{x: 0f32, y: 1f32, z: -0.5f32},
 	v2:   Vector{x: 0.5f32, y: 1f32, z: 0f32},
 	material: Material {
@@ -234,7 +234,7 @@ fn main() {
 	},
     });
     scene.triangles.push(Triangle {
-	base: Vector{x: 0f32, y: 0.4f32, z: 1.2f32},
+	base: Vector{x: 0f32, y: 0.4f32, z: 0.9f32},
 	v1:   Vector{x: -1f32, y: 1f32, z: 0.4f32},
 	v2:   Vector{x: 0f32, y: 1f32, z: -0.5f32},
 	material: Material {
@@ -257,14 +257,21 @@ fn main() {
 	for px in 0 .. width {
 	    let pixel = rendering.get_mut_pixel(px, py);
 
-	    let x = 2f32 * ((px as f32) - (width  as f32 * 0.5f32)) / (height as f32);	    // using height to keep aspect ratio
-	    let y = -2f32 * ((py as f32) - (height as f32 * 0.5f32)) / (height as f32);
 
-	    let ray = camera.shoot_ray(x, y);
-
-	    let num_samples = 25;
+	    let num_samples = 100;
 	    let mut accumulator = BLACK;
 	    for _ in 0 .. num_samples {
+		let p1: f32 = rand::random::<f32>();
+		let p2: f32 = rand::random::<f32>();
+
+		let px2 = px as f32 + p1 - 0.5f32;
+		let py2 = py as f32 + p2 - 0.5f32;
+
+		let x =  2f32 * (px2 - (width  as f32 * 0.5f32)) / (height as f32);	    // using height to keep aspect ratio
+		let y = -2f32 * (py2 - (height as f32 * 0.5f32)) / (height as f32);
+
+		let ray = camera.shoot_ray(x, y);
+		    
 		accumulator = accumulator + scene.trace_ray(ray, 5);
 	    }
 	    
@@ -278,8 +285,8 @@ fn main() {
     println!("{:#?}", rendering.pixels[width * height - 600]);
     println!("{:#?}", rendering.pixels[width * height - 700]);
     
-    
-    rendering.apply_gamma(0.2f32);
+    rendering.scale(20f32);
+    rendering.apply_gamma(0.5f32);
     
     println!("saving...");
     

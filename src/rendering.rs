@@ -32,6 +32,14 @@ impl Rendering {
 	self.pixels.get_mut(n).unwrap()
     }
 
+    pub fn scale(&mut self, scaling: f32) {
+	for pixel in &mut self.pixels {
+	    pixel.r *= scaling;
+	    pixel.g *= scaling;
+	    pixel.b *= scaling;
+	}
+    }
+    
     pub fn apply_gamma(&mut self, gamma: f32) {
 	for pixel in &mut self.pixels {
 	    pixel.r = pixel.r.powf(gamma);
