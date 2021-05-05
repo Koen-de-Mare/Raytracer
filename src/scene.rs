@@ -139,14 +139,12 @@ impl Scene {
 		if disc_angle == 0f32 {
 		    assert!(alpha == 0f32);
 		}
-		
-		let p1 = rand::random::<f32>();
 
-		let direction_in = if p1 < alpha {
+		let direction_in = if rand::random::<f32>() < alpha {
 		    // sample on the disc pointing towards the light source
 		    assert!(disc_angle > 0f32);
 
-		    let p2 = rand::random::<f32>();
+		    let p1 = rand::random::<f32>();
 		    let cos_theta = 1f32 - p1 * (1f32 - disc_angle.cos());
 		    let theta = cos_theta.acos();
 

@@ -14,6 +14,7 @@ mod scene;
 mod rendering;
 mod material;
 mod ray;
+mod model;
 
 use vector::*;
 use color::*;
@@ -23,12 +24,13 @@ use camera::*;
 use scene::*;
 use rendering::*;
 use material::*;
+use model::*;
 
 fn main() {
     println!("rendering...");
 
     let camera = Camera {
-	position: Vector{x: 0.001f32, y: -0.801f32, z: 1.0001f32},
+	position: Vector{x: 0.001f32, y: -0.201f32, z: 0.10001f32},
 	forward:  Vector{x: 0f32, y: 1f32, z: 0f32},
 	right:    Vector{x: 1f32, y: 0f32, z: 0f32},
 	up:       Vector{x: 0f32, y: 0f32, z: 1f32},
@@ -39,8 +41,8 @@ fn main() {
 	sphere: Sphere {
 	    position: Vector {
 		x: 0f32,
-		y: 0.7f32,
-		z: 1.25f32
+		y: 0f32,
+		z: 1.5f32
 	    },
 	    radius: 0.05f32,
 	    color: Color {
@@ -53,7 +55,7 @@ fn main() {
 
     //floor
     scene.triangles.push(Triangle {
-	base: Vector{x: 1f32, y: 1f32, z: 0f32},
+	base: Vector{x: 1f32, y: 1f32, z: 0.05f32},
 	v1:   Vector{x: -2f32, y: 0f32, z: 0f32},
 	v2:   Vector{x: 0f32, y: -2f32, z: 0f32},
 	material: Material {
@@ -65,7 +67,7 @@ fn main() {
 	},
     });
     scene.triangles.push(Triangle {
-	base: Vector{x: -1f32, y: -1f32, z: 0f32},
+	base: Vector{x: -1f32, y: -1f32, z: 0.05f32},
 	v1:   Vector{x: 2f32, y: 0f32, z: 0f32},
 	v2:   Vector{x: 0f32, y: 2f32, z: 0f32},
 	material: Material {
@@ -208,47 +210,13 @@ fn main() {
 	},
     });
 
-    //occluder
-    scene.triangles.push(Triangle {
-	base: Vector{x: 0f32, y: 0.4f32, z: 0.9f32},
-	v1:   Vector{x: 0.5f32, y: 1f32, z: 0f32},
-	v2:   Vector{x: -1f32, y: 1f32, z: 0.4f32},
-	material: Material {
-	    diffuse_color: Color {
-		r: 0.9f32,
-		g: 0.9f32,
-		b: 0.9f32,
-	    },
-	},
-    });
-    scene.triangles.push(Triangle {
-	base: Vector{x: 0f32, y: 0.4f32, z: 0.9f32},
-	v1:   Vector{x: 0f32, y: 1f32, z: -0.5f32},
-	v2:   Vector{x: 0.5f32, y: 1f32, z: 0f32},
-	material: Material {
-	    diffuse_color: Color {
-		r: 0.9f32,
-		g: 0.9f32,
-		b: 0.9f32,
-	    },
-	},
-    });
-    scene.triangles.push(Triangle {
-	base: Vector{x: 0f32, y: 0.4f32, z: 0.9f32},
-	v1:   Vector{x: -1f32, y: 1f32, z: 0.4f32},
-	v2:   Vector{x: 0f32, y: 1f32, z: -0.5f32},
-	material: Material {
-	    diffuse_color: Color {
-		r: 0.9f32,
-		g: 0.9f32,
-		b: 0.9f32,
-	    },
-	},
-    });
+    let raw_model = RawModel::load_to_raw("bunny");
+    let mut model = Model::from_raw(raw_model);
 
+    scene.triangles.append(&mut model.triangles);
     
-    let width = 16 * 20;
-    let height = 9 * 20;
+    let width = 16 * 25;
+    let height = 9 * 25;
     
     let mut rendering = Rendering::rendering(width, height);
 
@@ -258,7 +226,7 @@ fn main() {
 	    let pixel = rendering.get_mut_pixel(px, py);
 
 
-	    let num_samples = 100;
+	    let num_samples = 20;
 	    let mut accumulator = BLACK;
 	    for _ in 0 .. num_samples {
 		let p1: f32 = rand::random::<f32>();
@@ -272,7 +240,7 @@ fn main() {
 
 		let ray = camera.shoot_ray(x, y);
 		    
-		accumulator = accumulator + scene.trace_ray(ray, 5);
+		accumulator = accumulator + scene.trace_ray(ray, 2);
 	    }
 	    
 	    *pixel = accumulator * (1f32 / num_samples as f32);
@@ -286,9 +254,11 @@ fn main() {
     println!("{:#?}", rendering.pixels[width * height - 700]);
     
     rendering.scale(20f32);
-    rendering.apply_gamma(0.5f32);
+    rendering.apply_gamma(0.4f32);
     
     println!("saving...");
     
     rendering.save();
 }
+
+
