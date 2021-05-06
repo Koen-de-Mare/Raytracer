@@ -41,9 +41,9 @@ impl RawModel {
 
 		// TEMP y and z flipped TEMP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		let new_vertex = Vector {
-		    x: x,
-		    y: -z,
-		    z: y,
+		    x: x * 5f32,
+		    y: -z * 5f32 + 0.2f32,
+		    z: y * 5f32 - 0.2f32,
 		};
 
 		raw_model.vertices.push(new_vertex);

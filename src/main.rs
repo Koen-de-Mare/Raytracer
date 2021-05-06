@@ -30,7 +30,7 @@ fn main() {
     println!("rendering...");
 
     let camera = Camera {
-	position: Vector{x: 0.001f32, y: -0.201f32, z: 0.10001f32},
+	position: Vector{x: 0.001f32, y: -0.901f32, z: 0.50001f32},
 	forward:  Vector{x: 0f32, y: 1f32, z: 0f32},
 	right:    Vector{x: 1f32, y: 0f32, z: 0f32},
 	up:       Vector{x: 0f32, y: 0f32, z: 1f32},
@@ -40,11 +40,11 @@ fn main() {
 	triangles: Vec::new(),
 	sphere: Sphere {
 	    position: Vector {
-		x: 0f32,
-		y: 0f32,
+		x: 0.5f32,
+		y: 0.5f32,
 		z: 1.5f32
 	    },
-	    radius: 0.05f32,
+	    radius: 0.1f32,
 	    color: Color {
 		r: 1f32,
 		g: 1f32,
@@ -55,7 +55,7 @@ fn main() {
 
     //floor
     scene.triangles.push(Triangle {
-	base: Vector{x: 1f32, y: 1f32, z: 0.05f32},
+	base: Vector{x: 1f32, y: 1f32, z: 0f32},
 	v1:   Vector{x: -2f32, y: 0f32, z: 0f32},
 	v2:   Vector{x: 0f32, y: -2f32, z: 0f32},
 	material: Material {
@@ -67,7 +67,7 @@ fn main() {
 	},
     });
     scene.triangles.push(Triangle {
-	base: Vector{x: -1f32, y: -1f32, z: 0.05f32},
+	base: Vector{x: -1f32, y: -1f32, z: 0f32},
 	v1:   Vector{x: 2f32, y: 0f32, z: 0f32},
 	v2:   Vector{x: 0f32, y: 2f32, z: 0f32},
 	material: Material {
@@ -113,9 +113,9 @@ fn main() {
 	v2:   Vector{x: 0f32, y: -2f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.8f32,
-		g: 0.8f32,
-		b: 0.1f32,
+		r: 0f32,
+		g: 0f32,
+		b: 0.9f32,
 	    },
 	},
     });
@@ -125,9 +125,9 @@ fn main() {
 	v2:   Vector{x: 0f32, y: 2f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.8f32,
-		g: 0.8f32,
-		b: 0.1f32,
+		r: 0f32,
+		g: 0f32,
+		b: 0.9f32,
 	    },
 	},
     });
@@ -139,9 +139,9 @@ fn main() {
 	v2:   Vector{x: 0f32, y: 0f32, z: -2f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.1f32,
-		g: 0.8f32,
-		b: 0.8f32,
+		r: 0.9f32,
+		g: 0f32,
+		b: 0f32,
 	    },
 	},
     });
@@ -151,9 +151,9 @@ fn main() {
 	v2:   Vector{x: 0f32, y: 0f32, z: 2f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.1f32,
-		g: 0.8f32,
-		b: 0.8f32,
+		r: 0.9f32,
+		g: 0f32,
+		b: 0f32,
 	    },
 	},
     });
@@ -165,9 +165,9 @@ fn main() {
 	v2:   Vector{x: -2f32, y: 0f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.8f32,
-		g: 0.1f32,
-		b: 0.8f32,
+		r: 0f32,
+		g: 0.9f32,
+		b: 0f32,
 	    },
 	},
     });
@@ -177,9 +177,9 @@ fn main() {
 	v2:   Vector{x: 2f32, y: 0f32, z: 0f32},
 	material: Material {
 	    diffuse_color: Color {
-		r: 0.8f32,
-		g: 0.1f32,
-		b: 0.8f32,
+		r: 0f32,
+		g: 0.9f32,
+		b: 0f32,
 	    },
 	},
     });
@@ -214,9 +214,9 @@ fn main() {
     let mut model = Model::from_raw(raw_model);
 
     scene.triangles.append(&mut model.triangles);
-    
-    let width = 16 * 25;
-    let height = 9 * 25;
+
+    let width = 16 * 15;
+    let height = 9 * 15;
     
     let mut rendering = Rendering::rendering(width, height);
 
@@ -225,8 +225,7 @@ fn main() {
 	for px in 0 .. width {
 	    let pixel = rendering.get_mut_pixel(px, py);
 
-
-	    let num_samples = 20;
+	    let num_samples = 15;
 	    let mut accumulator = BLACK;
 	    for _ in 0 .. num_samples {
 		let p1: f32 = rand::random::<f32>();
@@ -239,22 +238,24 @@ fn main() {
 		let y = -2f32 * (py2 - (height as f32 * 0.5f32)) / (height as f32);
 
 		let ray = camera.shoot_ray(x, y);
-		    
-		accumulator = accumulator + scene.trace_ray(ray, 2);
+
+		let num_bounces = 5;
+		let mut ray_color = scene.trace_ray(ray, num_bounces);
+
+		accumulator = accumulator + ray_color;
 	    }
 	    
 	    *pixel = accumulator * (1f32 / num_samples as f32);
 	}
     }
 
+    println!("{:#?}", rendering.pixels[width * height - 200]);
     println!("{:#?}", rendering.pixels[width * height - 300]);
     println!("{:#?}", rendering.pixels[width * height - 400]);
-    println!("{:#?}", rendering.pixels[width * height - 500]);
-    println!("{:#?}", rendering.pixels[width * height - 600]);
-    println!("{:#?}", rendering.pixels[width * height - 700]);
     
-    rendering.scale(20f32);
-    rendering.apply_gamma(0.4f32);
+    rendering.scale(25f32);
+
+    rendering.apply_gamma(0.6f32);
     
     println!("saving...");
     
